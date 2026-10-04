@@ -1,4 +1,4 @@
--- fuzzy: finding the things a few typed letters mean.
+-- Fuzzy: finding the things a few typed letters mean.
 --
 --   use Fuzzy (rank, found, score, places)
 --

@@ -1,4 +1,4 @@
-# fuzzy
+# Fuzzy
 
 Fuzzy matching for [Meadow](https://github.com/mcdearman/meadow): finding the
 texts a few typed letters mean, the likeliest first, and where in each the
@@ -35,5 +35,9 @@ highlight.
 ## Install
 
 ```sh
-meadow add mcdearman/MeadowFuzzy
+meadow add mcdearman/Fuzzy
 ```
+
+## Licence
+
+BSD 3-Clause: see [LICENSE](LICENSE).
