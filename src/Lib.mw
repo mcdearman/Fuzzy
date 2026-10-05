@@ -108,8 +108,7 @@ fun bonus (t : #[Char]) (j : Int) : Int =
     let before = arrayGet t (j - 1) in
     let here = arrayGet t j in
     if not (C.isAlphaNum before) and C.code before < 128 then atWordStart
-    else if C.isLower before and C.isUpper here then atCamel
-    else 0
+    else if C.isLower before and C.isUpper here then atCamel else 0
 
 -- One word of a query in a text. A table, a row a letter of the word and a
 -- column a character of the text: the best score of the word up to that
@@ -146,15 +145,16 @@ fun fillRow q t (n : Int) best from (i : Int) (j : Int) (gapped : Int) (gappedAt
     let prior = if i > 0 and j > 0 then stGetArray best ((i - 1) * n + j - 1) else never in
     let u =
       (if not (same (arrayGet q i) (arrayGet t j)) then ()
-       else if i == 0 then stSetArray best j (matched + bonus t j)
-       else
-         let next = if prior > never then prior + adjacent else never in
-         let apart = if gapped > never then gapped else never in
-         if next <= never and apart <= never then ()
-         else if next >= apart then
-           (let a = stSetArray best (i * n + j) (next + matched + bonus t j) in stSetArray from (i * n + j) (j - 1))
-         else
-           (let a = stSetArray best (i * n + j) (apart + matched + bonus t j) in stSetArray from (i * n + j) gappedAt)) in
+        else if i == 0 then stSetArray best j (matched + bonus t j)
+        else
+          let next = if prior > never then prior + adjacent else never in
+          let apart = if gapped > never then gapped else never in
+          if next <= never and apart <= never then ()
+          else if next >= apart then
+            (let a = stSetArray best (i * n + j) (next + matched + bonus t j) in
+              stSetArray from (i * n + j) (j - 1))
+          else
+            (let a = stSetArray best (i * n + j) (apart + matched + bonus t j) in stSetArray from (i * n + j) gappedAt)) in
     -- For the next column: every way so far is one more character apart, and
     -- the one just before this column opens a gap.
     let older = if gapped > never then gapped - gapGoesOn else never in
@@ -179,7 +179,9 @@ fun wayBack from (n : Int) (i : Int) (j : Int) (out : [Int]) =
   let hits =
     V.concatMap
       (\i -> match V.get items i with
-             | Just x -> (let t = text x in match found query t with | Just f -> [(x, f, S.charLength t, i)] | None -> [])
+             | Just x ->
+                 (let t = text x in
+                   match found query t with | Just f -> [(x, f, S.charLength t, i)] | None -> [])
              | None -> [])
       (V.range 0 (V.len items)) in
   let order = \a b ->
@@ -188,7 +190,7 @@ fun wayBack from (n : Int) (i : Int) (j : Int) (out : [Int]) =
         if score f != score g then compare (score g) (score f)
         else if la != lb then compare la lb
         else compare ia ib in
-    V.map (\h -> match h with | (x, f, _, _) -> (x, f)) (sortBy order hits)
+  V.map (\h -> match h with | (x, f, _, _) -> (x, f)) (sortBy order hits)
 
 -- --- tests -------------------------------------------------------------------
 
@@ -200,7 +202,9 @@ fun placed (q : String) (t : String) : Maybe [Int] = M.map places (found q t)
 fun first (q : String) (ts : [String]) : [String] = V.map fst (rank q (\t -> t) ts)
 
 @test fun lettersAreFoundInOrderWithAnythingBetween () =
-  let a = assertEq (placed "vlen" "Vector.length") (Just [0, 7, 8, 9]) "the V, and `len` after the dot" in
+  let a =
+    assertEq (placed "vlen" "Vector.length") (Just [0, 7, 8, 9]) "the V, and `len` after the dot"
+  in
   let b = assertEq (placed "abc" "a-b-c") (Just [0, 2, 4]) "each where it is" in
   let c = assertEq (placed "ba" "abc") None "not out of order" in
   assertEq (placed "x" "abc") None "and not when a letter is missing"
@@ -211,28 +215,54 @@ fun first (q : String) (ts : [String]) : [String] = V.map fst (rank q (\t -> t) 
 
 @test fun theStartOfAWordIsWorthMoreThanItsMiddle () =
   -- `len` is in both; in the second it starts a word.
-  let a = assertEq (first "len" ["silently", "Vector.length"]) ["Vector.length", "silently"] "after the dot first" in
+  let a =
+    assertEq
+      (first "len" ["silently", "Vector.length"])
+      ["Vector.length", "silently"]
+      "after the dot first"
+  in
   -- A capital after a small letter starts a word too.
   let b = assertEq (placed "gt" "getText") (Just [0, 3]) "the T of Text, not the t of get" in
-  assertEq (first "fb" ["affable", "fooBar"]) ["fooBar", "affable"] "the B that starts a word, before the b in one"
+  assertEq
+    (first "fb" ["affable", "fooBar"])
+    ["fooBar", "affable"]
+    "the B that starts a word, before the b in one"
 
 @test fun lettersTogetherAreWorthMoreThanLettersApart () =
-  let a = assertEq (first "map" ["xmxaxp", "amap", "mapping"]) ["mapping", "amap", "xmxaxp"] "whole at the start; whole; apart" in
-  assertEq (placed "ab" "xaxbab") (Just [4, 5]) "the two that are side by side"
+  let a =
+    assertEq
+      (first "map" ["xmxaxp", "amap", "mapping"])
+      ["mapping", "amap", "xmxaxp"]
+      "whole at the start; whole; apart"
+  in assertEq (placed "ab" "xaxbab") (Just [4, 5]) "the two that are side by side"
 
 @test fun aCapitalAsksForACapital () =
-  let a = assertEq (placed "v" "aVector") (Just [1]) "a small letter finds a capital at a word's start" in
+  let a =
+    assertEq (placed "v" "aVector") (Just [1]) "a small letter finds a capital at a word's start"
+  in
   let b = assertEq (placed "V" "valueVector") (Just [5]) "a capital finds only a capital" in
   assertEq (placed "V" "value") None "and none is no match"
 
 @test fun everyWordOfAQueryHasToBeThere () =
-  let a = assertEq (first "vec len" ["String.length", "Std.Collections.Vector.length", "Vector.map"]) ["Std.Collections.Vector.length"] "both words" in
-  let b = assertEq (M.map places (found "len vec" "Vector.length")) (Just [0, 1, 2, 7, 8, 9]) "in either order, the places in the text's" in
-  assertEq (M.isSome (found "vec zzz" "Vector.length")) False "one word missing is no match"
+  let a =
+    assertEq
+      (first "vec len" ["String.length", "Std.Collections.Vector.length", "Vector.map"])
+      ["Std.Collections.Vector.length"]
+      "both words"
+  in
+  let b =
+    assertEq
+      (M.map places (found "len vec" "Vector.length"))
+      (Just [0, 1, 2, 7, 8, 9])
+      "in either order, the places in the text's"
+  in assertEq (M.isSome (found "vec zzz" "Vector.length")) False "one word missing is no match"
 
 @test fun ofTwoFoundAsWellTheShorterIsFirstThenTheEarlier () =
   let a = assertEq (first "ab" ["abcd", "ab", "abc"]) ["ab", "abc", "abcd"] "shorter first" in
   assertEq (first "a" ["ax", "ay"]) ["ax", "ay"] "then as they came"
 
 @test fun lettersAreCharactersNotBytes () =
-  assertEq (placed "é" "caf\u{e9}") (Just [3]) "the fourth character, though it starts at the fourth byte and is two"
+  assertEq
+    (placed "é" "caf\u{e9}")
+    (Just [3])
+    "the fourth character, though it starts at the fourth byte and is two"
