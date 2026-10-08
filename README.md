@@ -1,6 +1,6 @@
 # Fuzzy
 
-Fuzzy matching for [Meadow](https://github.com/mcdearman/meadow): finding the
+Fuzzy matching for [Meadow](https://github.com/meadow-lang/meadow): finding the
 texts a few typed letters mean, the likeliest first, and where in each the
 letters fell. It is what a picker ranks its list with.
 
@@ -35,7 +35,7 @@ highlight.
 ## Install
 
 ```sh
-meadow add mcdearman/Fuzzy
+meadow add meadow-lang/Fuzzy
 ```
 
 ## Licence
